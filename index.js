@@ -1,57 +1,72 @@
 import express from "express";
-import { validationResult } from "express-validator";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import multer from "multer";
 
-import { registerValidator } from "./validations/auth.js";
-import UserShema from "./models/user.js";
+import {
+  registerValidator,
+  loginValidator,
+  postCreateValidator,
+} from "./validations.js";
+import { checkAuth, validationErrors } from "./utils/index.js";
+import { UserController, PostController } from "./controllers/index.js";
 
 mongoose
-  .connect("mongodb://localhost:27017/mydb", {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-  })
+  .connect("mongodb://localhost:27017/mydb")
   .then(() => console.log("DB OK"))
   .catch((err) => console.log(err));
 
 const app = express();
 
+const storage = multer.diskStorage({
+  destination: (_, __, cd) => {
+    cs(null, "uploads");
+  },
+  filename: (_, file, cd) => {
+    cs(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage });
+
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.send("Hello world");
 });
 
-app.post("/login", (req, res) => {
-  const token = jwt.sign({
-    email: req.body.email,
-    password: req.body.password,
+app.post("/login", loginValidator, validationErrors, UserController.login);
+app.post(
+  "/register",
+  registerValidator,
+  validationErrors,
+  UserController.register
+);
+app.get("/me", checkAuth, UserController.getMe);
+
+app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
+  res.json({
+    url: `/uploads/${req.file.originalname}`,
   });
 });
 
-app.post("/register", registerValidator, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json(errors.array());
-  }
-
-  const password = req.body.password;
-  const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash(password, salt);
-
-  const doc = new UserShema({
-    email: req.body.email,
-    fullName: req.body.fullName,
-    avatarUrl: req.body.avatarUrl,
-    passwordHash: passwordHash,
-  });
-
-  const user = await doc.save();
-
-  res.json(user);
-});
+app.get("/posts", PostController.getAll);
+app.get("/posts:id", PostController.getOne);
+app.post(
+  "/posts",
+  checkAuth,
+  postCreateValidator,
+  validationErrors,
+  PostController.create
+);
+app.delete("/posts:id", checkAuth, PostController.remove);
+app.patch(
+  "/posts:id",
+  checkAuth,
+  postCreateValidator,
+  validationErrors,
+  PostController.update
+);
 
 app.listen(8080, (err) => {
   if (err) {
