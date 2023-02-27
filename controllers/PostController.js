@@ -2,7 +2,7 @@ import PostSchema from "../models/Post.js";
 
 export const getAll = async (req, res) => {
   try {
-    const posts = await PostSchema.find().populate("user").exect();
+    const posts = await PostSchema.find().populate("user").exec();
     res.json(posts);
   } catch (err) {
     console.log(err);
