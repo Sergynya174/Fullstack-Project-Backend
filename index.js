@@ -20,9 +20,6 @@ const app = express();
 
 const storage = multer.diskStorage({
   destination: (_, __, cd) => {
-    if (!fs.existsSync("uploads")) {
-      fs.mkdirSync("uploads");
-    }
     cd(null, "uploads");
   },
   filename: (_, file, cd) => {
@@ -58,7 +55,7 @@ app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
 app.get("/posts", PostController.getAll);
 app.get("/tags", PostController.getLastTags);
 app.get("/posts/tags", PostController.getLastTags);
-app.get("/posts:id", PostController.getOne);
+app.get("/posts/:id", PostController.getOne);
 app.post(
   "/posts",
   checkAuth,
@@ -66,9 +63,9 @@ app.post(
   validationErrors,
   PostController.create
 );
-app.delete("/posts:id", checkAuth, PostController.remove);
+app.delete("/posts/:id", checkAuth, PostController.remove);
 app.patch(
-  "/posts:id",
+  "/posts/:id",
   checkAuth,
   postCreateValidator,
   validationErrors,

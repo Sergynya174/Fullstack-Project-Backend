@@ -56,10 +56,9 @@ export const getOne = async (req, res) => {
             message: "Статья не найдена",
           });
         }
-
         res.json(doc);
       }
-    );
+    ).populate("user");
   } catch (err) {
     console.log(err);
     res.status(500).json({
@@ -101,8 +100,8 @@ export const create = async (req, res) => {
       title: req.body.title,
       text: req.body.text,
       imageUrl: req.body.imageUrl,
-      tags: req.body.tags,
-      user: req.body.user,
+      tags: req.body.tags.split(","),
+      user: req.userId,
     });
 
     const post = await doc.save();
@@ -127,8 +126,8 @@ export const update = async (req, res) => {
         title: req.body.title,
         text: req.body.text,
         imageUrl: req.body.imageUrl,
-        tags: req.body.tags,
-        user: req.body.user,
+        tags: req.body.tags.split(","),
+        user: req.userId,
       }
     );
     res.json({
