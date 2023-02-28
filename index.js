@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import multer from "multer";
 import cors from "cors";
+import fs from "fs";
 
 import {
   registerValidator,
@@ -20,8 +21,12 @@ const app = express();
 
 const storage = multer.diskStorage({
   destination: (_, __, cd) => {
+    if (!fs.existsSync("uploads")) {
+      fs.mkdirSync("uploads");
+    }
     cd(null, "uploads");
   },
+
   filename: (_, file, cd) => {
     cd(null, file.originalname);
   },
@@ -72,7 +77,7 @@ app.patch(
   PostController.update
 );
 
-app.listen(8080, (err) => {
+app.listen(process.env.PORT || 8080, (err) => {
   if (err) {
     return console.log(err);
   }
